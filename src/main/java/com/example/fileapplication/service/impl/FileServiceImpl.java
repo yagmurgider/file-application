@@ -1,12 +1,18 @@
 package com.example.fileapplication.service.impl;
 
+import com.example.fileapplication.abstacts.GenericResponse;
 import com.example.fileapplication.dto.FileDTO;
+import com.example.fileapplication.dto.ResponseMessage;
 import com.example.fileapplication.entity.FileEntity;
+import com.example.fileapplication.enums.ContentType;
 import com.example.fileapplication.repository.FileRepository;
 import com.example.fileapplication.service.FileService;
+import com.example.fileapplication.util.TPage;
 import org.aspectj.util.FileUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +41,19 @@ public class FileServiceImpl implements FileService {
 
 
     @Override
-    public FileDTO store(MultipartFile file) throws IOException {
+    public GenericResponse<FileDTO> store(MultipartFile file) throws IOException {
+        GenericResponse<FileDTO> response = new GenericResponse<>();
+
+        if (!this.checkContentType(file.getContentType())) {
+            response.setResponseMessage(new ResponseMessage("Unexpected file extension: " + file.getContentType()));
+            return response;
+        }
+
+        if(this.fileRepository.findByName(file.getOriginalFilename()) != null) {
+            response.setResponseMessage(new ResponseMessage("Multiple files with the same name cannot be uploaded!"));
+            return response;
+        }
+
         String realPathtoUploads =  request.getServletContext().getRealPath("/uploads/");
         if(!new File(realPathtoUploads).exists()) {
             new File(realPathtoUploads).mkdir();
@@ -44,7 +63,15 @@ public class FileServiceImpl implements FileService {
         File dest = new File(filePath);
         file.transferTo(dest);
 
-        return this.save(new FileDTO(fileName, filePath, file.getSize(), file.getContentType()));
+        FileDTO entity = this.save(new FileDTO(fileName, filePath, file.getSize(), file.getContentType()));
+        response.setData(modelMapper.map(entity, FileDTO.class));
+        response.setResponseMessage(new ResponseMessage("Uploaded the file successfully: " + file.getOriginalFilename()));
+        return response;
+    }
+
+    private boolean checkContentType(String extension) {
+        ContentType contentType = ContentType.findByName(extension);
+        return contentType != null;
     }
 
     @Override
@@ -75,22 +102,20 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Boolean deleteById(Long id) {
+    public GenericResponse deleteById (Long id) throws IOException{
+        GenericResponse response = new GenericResponse();
         Optional<FileEntity> entity = fileRepository.findById(id);
         if (entity.isPresent() && entity.get().getPath() != null) {
-            try {
                 boolean isDeletedFromPath = Files.deleteIfExists(Paths.get(entity.get().getPath()));
                 if (isDeletedFromPath) {
                     this.fileRepository.deleteById(entity.get().getId());
-                    return true;
+                    response.setResponseMessage(new ResponseMessage("File deleted."));
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
+        } else {
+            response.setResponseMessage(new ResponseMessage("File does not exist ! ID: " + id));
         }
-        return false;
+        return response;
     }
 
     @Override
@@ -101,5 +126,13 @@ public class FileServiceImpl implements FileService {
             fileDTOS.add(modelMapper.map(item, FileDTO.class));
         }
         return fileDTOS;
+    }
+
+    @Override
+    public TPage<FileDTO> getAllPageable(Pageable pageable) {
+        Page<FileEntity> data = this.fileRepository.findAll(pageable);
+        TPage<FileDTO> response = new TPage<FileDTO>();
+        response.setStat(data, Arrays.asList(modelMapper.map(data.getContent(), FileDTO[].class)));
+        return response;
     }
 }

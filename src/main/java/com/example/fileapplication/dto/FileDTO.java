@@ -1,5 +1,6 @@
 package com.example.fileapplication.dto;
 
+import com.example.fileapplication.abstacts.AbstractGenericType;
 import com.sun.istack.NotNull;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -13,7 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @ApiModel(value = "File Data Transfer Object")
-public class FileDTO {
+public class FileDTO extends AbstractGenericType {
 
     @NotNull
     @ApiModelProperty(required = true, value = "Name Of File")
