@@ -1,6 +1,6 @@
 package com.example.fileapplication.service;
 
-import com.example.fileapplication.abstacts.GenericResponse;
+import com.example.fileapplication.dto.GenericResponse;
 import com.example.fileapplication.dto.FileDTO;
 import com.example.fileapplication.util.TPage;
 import org.springframework.data.domain.Pageable;

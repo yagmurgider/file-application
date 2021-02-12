@@ -1,6 +1,6 @@
 package com.example.fileapplication.service.impl;
 
-import com.example.fileapplication.abstacts.GenericResponse;
+import com.example.fileapplication.dto.GenericResponse;
 import com.example.fileapplication.dto.FileDTO;
 import com.example.fileapplication.dto.ResponseMessage;
 import com.example.fileapplication.entity.FileEntity;

@@ -1,5 +1,6 @@
-package com.example.fileapplication.abstacts;
+package com.example.fileapplication.dto;
 
+import com.example.fileapplication.abstacts.AbstractGenericType;
 import com.example.fileapplication.dto.ResponseMessage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
